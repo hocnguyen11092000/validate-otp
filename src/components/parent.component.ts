@@ -5,6 +5,7 @@ import {
   Validators,
 } from '@angular/forms';
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   Input,
@@ -13,19 +14,23 @@ import {
 } from '@angular/core';
 import { ChildComponent } from './child.component';
 import * as _ from 'lodash';
+import { TestService } from 'src/services/test.service';
+import { tap } from 'rxjs';
 
 @Component({
   selector: 'app-parent[form][test]',
   template: `
     <h3>Hello form parent component</h3>
-    <app-child [form]="getCurrentControl"></app-child>
+    <!-- <app-child [form]="getCurrentControl"></app-child> -->
   `,
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ChildComponent, ReactiveFormsModule],
 })
-export class Parentcomponent implements OnInit {
+export class Parentcomponent implements OnInit, AfterViewInit {
   private _fb = inject(FormBuilder);
+  private _test = inject(TestService);
+
   _config: any;
 
   @Input() form!: FormGroup;
@@ -52,9 +57,13 @@ export class Parentcomponent implements OnInit {
     },
   ];
 
-  ngOnInit(): void {
-    this.addFormGroupItem();
+  ngAfterViewInit(): void {
+    if (this.form) {
+      // this.addFormGroupItem();
+    }
+  }
 
+  ngOnInit(): void {
     if (_.size(this.config)) {
       this.config = _.chain(this.config)
         .filter((c) => c.active)
@@ -76,7 +85,15 @@ export class Parentcomponent implements OnInit {
         .value();
     }
 
-    console.log(this.config);
+    // console.log(this.config);
+
+    this._test.obs$
+      .pipe(
+        tap((val) => {
+          console.log('child', val);
+        })
+      )
+      .subscribe();
   }
 
   addFormGroupItem(): void {

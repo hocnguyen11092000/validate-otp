@@ -1,7 +1,21 @@
 <h2>hello world</h2>
 
 <form [formGroup]="coreForm" (ngSubmit)="submitCoreForm()">
-  <app-parent [form]="coreForm" [test]="true" [config]="config"></app-parent>
+  <!-- <app-parent [form]="coreForm" [test]="true" [config]="config"></app-parent> -->
 
   <button class="btn">Submit</button>
+</form>
+
+<button class="btn" (click)="emitSubject()">emit</button>
+<br />
+<button class="btn" (click)="setItem()">set item</button>
+<br />
+<button class="btn" (click)="getItem()">get item</button>
+
+<ul class="list">
+  <li routerLink="parent">parent</li>
+  <li routerLink="child">child</li>
+</ul>
+<form [formGroup]="coreForm" (ngSubmit)="submitCoreForm()">
+  <router-outlet></router-outlet>
 </form>

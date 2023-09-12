@@ -20,7 +20,9 @@ export class ChildComponent implements OnInit {
   @Input() form!: FormGroup;
 
   ngOnInit(): void {
-    this.addFormGroup();
+    if (this.form) {
+      // this.addFormGroup();
+    }
   }
 
   addFormGroup(): void {
