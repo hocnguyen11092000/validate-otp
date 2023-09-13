@@ -1,6 +1,6 @@
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import {
   BehaviorSubject,
@@ -13,8 +13,10 @@ import {
   Subject,
   switchMap,
   startWith,
+  debounceTime,
 } from 'rxjs';
 import { Parentcomponent } from 'src/components/parent.component';
+import { SendOptcomponent } from 'src/components/send-otp.component';
 import { SessionStorage } from 'src/services/sersion.service';
 import { TestService } from 'src/services/test.service';
 
@@ -25,16 +27,22 @@ import { TestService } from 'src/services/test.service';
   standalone: true,
   imports: [
     Parentcomponent,
+    SendOptcomponent,
     ReactiveFormsModule,
     RouterOutlet,
     RouterLink,
     AsyncPipe,
     NgIf,
+    JsonPipe,
   ],
 })
 export class AppComponent implements OnInit {
   private _fb = inject(FormBuilder);
   readonly coreForm = this._fb.nonNullable.group({});
+  readonly otpForm = this._fb.nonNullable.group({
+    phone: ['', Validators.required],
+    otp: ['', [Validators.required]],
+  });
   private _test = inject(TestService);
   private readonly _ss = inject(SessionStorage);
   restart$ = new Subject<void>();
@@ -69,6 +77,8 @@ export class AppComponent implements OnInit {
     },
   ];
 
+  optValue = '';
+
   public submitCoreForm() {
     if (this.coreForm.valid) {
       console.log(this.coreForm.getRawValue());
@@ -99,5 +109,15 @@ export class AppComponent implements OnInit {
     this.restart$.next();
   }
 
-  ngOnInit(): void {}
+  isDisable$ = new Observable<boolean>();
+
+  ngOnInit(): void {
+    this.isDisable$ = this.otpForm.get('phone')!.statusChanges.pipe(
+      // startWith(''),
+      debounceTime(300),
+      map((status) => status === 'VALID')
+    );
+
+    this.isDisable$.subscribe(console.log);
+  }
 }

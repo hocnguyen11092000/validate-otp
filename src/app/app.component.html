@@ -17,9 +17,9 @@
   <li routerLink="child">child</li>
 </ul>
 
-<ng-container *ngIf="countdonwn$ | async as countdown; else temp">
+<!-- <ng-container *ngIf="countdonwn$ | async as countdown; else temp">
   {{ countdown }}
-</ng-container>
+</ng-container> -->
 
 <ng-template #temp>
   <button class="btn" (click)="restart()">restart</button>
@@ -28,3 +28,17 @@
 <form [formGroup]="coreForm" (ngSubmit)="submitCoreForm()">
   <router-outlet></router-outlet>
 </form>
+
+<form [formGroup]="otpForm">
+  <input type="text" formControlName="phone" placeholder="phone" />
+  <app-send-otp
+    [disableBtn]="(isDisable$ | async)!"
+    [(ngModel)]="optValue"
+    formControlName="otp"
+  ></app-send-otp>
+</form>
+
+{{ otpForm.value | json }}
+{{ otpForm.status | json }}
+{{ otpForm.touched | json }}
+{{ "form ng model " + optValue }}
