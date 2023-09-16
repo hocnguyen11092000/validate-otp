@@ -29,16 +29,66 @@
   <router-outlet></router-outlet>
 </form>
 
-<form [formGroup]="otpForm">
-  <input type="text" formControlName="phone" placeholder="phone" />
-  <app-send-otp
-    [disableBtn]="(isDisable$ | async)!"
-    [(ngModel)]="optValue"
-    formControlName="otp"
-  ></app-send-otp>
+<form [formGroup]="otpForm" (ngSubmit)="submitOpt()">
+  <div class="form-group">
+    <input
+      class="form-control"
+      type="text"
+      formControlName="phone"
+      placeholder="phone"
+    />
+  </div>
+
+  <app-control-helper [warningTip]="warningTemplate">
+    <app-send-otp
+      validateOnblur
+      [errorTempl]="warningTemplate"
+      [context]="otpForm.get('otp')!"
+      [disableBtn]="(isDisable$ | async)!"
+      [(ngModel)]="optValue"
+      formControlName="otp"
+    >
+      <!-- <ng-container
+        errorTemp
+        *ngIf="
+          otpForm.get('otp')!.invalid &&
+          (otpForm.get('otp')!.touched || otpForm.get('otp')!.dirty)
+        "
+      >
+        <div *ngIf="otpForm.get('otp')!.hasError('required')">
+          This field is required
+        </div>
+      </ng-container> -->
+    </app-send-otp>
+  </app-control-helper>
+
+  <!-- <div *ngIf="otpForm.get('otp')!.hasError('required')">
+    This field is required
+  </div> -->
+  <ng-template #warningTemplate let-control>
+    <ng-container *ngIf="control?.hasError('required')">
+      This field is required
+    </ng-container>
+    <ng-container *ngIf="control?.hasError('minlength')">
+      Error from minlength
+    </ng-container>
+  </ng-template>
+
+  <button
+    class="btn"
+    type="submit"
+    [disabled]="!otpForm.valid || (countafet60s$ | async)"
+  >
+    Submit
+  </button>
 </form>
 
 {{ otpForm.value | json }}
 {{ otpForm.status | json }}
 {{ otpForm.touched | json }}
 {{ "form ng model " + optValue }}
+<div class="timer-out">
+  {{ text }}
+</div>
+
+<div class="timer-2">countafet60s$: {{ countafet60s$ | async }}</div>

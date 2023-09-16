@@ -1,14 +1,20 @@
 import { CommonModule } from '@angular/common';
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   Input,
+  TemplateRef,
+  ViewChild,
   forwardRef,
+  inject,
 } from '@angular/core';
 import {
+  AbstractControl,
   ControlValueAccessor,
   FormsModule,
   NG_VALUE_ACCESSOR,
+  NgControl,
 } from '@angular/forms';
 import * as _ from 'lodash';
 import {
@@ -20,6 +26,8 @@ import {
   timer,
   startWith,
 } from 'rxjs';
+import { StringTemplateOutlet } from 'src/directives/string-template.directive';
+import { ValidateOnBlurDirective } from 'src/directives/validate-on-blur.directive';
 
 @Component({
   selector: 'app-send-otp',
@@ -28,13 +36,22 @@ import {
       <div class="form-group">
         <label for="otp">text</label>
         <input
+          #otp="ngModel"
           type="text"
           class="form-control"
           placeholder="input..."
           [ngModel]="controlValue"
           (ngModelChange)="onChange($event)"
           (blur)="onTouched()"
+          validateOnblur
         />
+        <!-- <div class="show-error">
+          <ng-container
+            *stringTemplateOutlet="errorTempl; context: { $implicit: context }"
+            >{{ errorTempl }}</ng-container
+          >
+        </div> -->
+        <ng-content [select]="[errorTemp]"></ng-content>
       </div>
       <ng-container
         *ngIf="countdonwn$ | async as countdonwn; else noCountTempl"
@@ -62,9 +79,14 @@ import {
       multi: true,
     },
   ],
-  imports: [FormsModule, CommonModule],
+  imports: [
+    FormsModule,
+    CommonModule,
+    StringTemplateOutlet,
+    ValidateOnBlurDirective,
+  ],
 })
-export class SendOptcomponent implements ControlValueAccessor {
+export class SendOptcomponent implements ControlValueAccessor, AfterViewInit {
   private _disableBtnResend = true;
   private _startDefault = 10;
 
@@ -83,6 +105,20 @@ export class SendOptcomponent implements ControlValueAccessor {
   }
 
   @Input() start: number = this._startDefault;
+  @Input() errorTempl!: TemplateRef<unknown>;
+  @Input() context!: AbstractControl;
+
+  //#region inject service
+  // private _ngControl = inject(NgControl);
+
+  constructor() {
+    // this._ngControl.valueAccessor = this;
+  }
+  //#endregion inject service
+
+  //#region viewChild, viewChildren
+  @ViewChild('otp') otp!: NgControl;
+  //#endregion viewChild, viewChildren
 
   //#region default function for custom comtrol
   writeValue(value: string): void {
@@ -120,5 +156,9 @@ export class SendOptcomponent implements ControlValueAccessor {
 
   resendOtp() {
     this.restart$.next();
+  }
+
+  ngAfterViewInit(): void {
+    console.log(this.errorTempl, this.context);
   }
 }
