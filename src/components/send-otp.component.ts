@@ -166,13 +166,18 @@ export class SendOptcomponent implements ControlValueAccessor, AfterViewInit {
       );
     }),
     takeUntil(this.destroy$),
-    shareReplay()
+    shareReplay({ bufferSize: 1, refCount: true })
   );
   //#endregion handle input change
 
   resendOtp() {
-    this.restart$.next();
-    this.onOtpChange.emit(this.countdonwn$);
+    this.countSendOtp.next(this.countSendOtp.getValue() + 1);
+
+    if (!(this.countSendOtp.getValue() > 3)) {
+      this.restart$.next();
+
+      this.onOtpChange.emit(this.countdonwn$);
+    }
   }
 
   ngAfterViewInit(): void {

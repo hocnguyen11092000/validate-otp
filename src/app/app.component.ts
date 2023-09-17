@@ -78,13 +78,16 @@ export class AppComponent implements OnInit, AfterViewInit {
   countdonwn$ = this.restart$.pipe(
     startWith('init start'),
     switchMap(() => {
-      return timer(100, 1000).pipe(
-        map((i) => this.start - i),
-        take(this.start + 1),
-        finalize(() => {
-          this.start = 60;
-        })
-      );
+      // return timer(100, 1000).pipe(
+      //   map((i) => this.start - i),
+      //   take(this.start + 1),
+      //   finalize(() => {
+      //     this.start = 60;
+      //   })
+      // );
+      return this.commonCoundown(0, 1000, this.start, () => {
+        this.start = 60;
+      });
     })
   );
 
@@ -133,6 +136,8 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   countSendOtp$ = new BehaviorSubject(0);
+  triggerIntervalOtp$ = new Subject<boolean>();
+
   restart() {
     this.countSendOtp$.next(this.countSendOtp$.getValue() + 1);
 
@@ -140,6 +145,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     if (this.countSendOtp$.getValue() >= 3) {
       this.maxSendOtp = 'Vui lòng thử lại sau 60p';
+      this.triggerIntervalOtp$.next(true);
     } else {
       this.restart$.next();
       this.maxSendOtp = '';
@@ -150,6 +156,19 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   count$ = new Subject<number>();
   ngOnInit(): void {
+    this.triggerIntervalOtp$
+      .pipe(
+        exhaustMap(() => {
+          return this.commonCoundown(0, 1000, 30).pipe(
+            withLatestFrom(this.triggerIntervalOtp$),
+            finalize(() => {
+              console.log('final after send 3 times otp');
+            })
+          );
+        })
+      )
+      .subscribe(console.log);
+
     this.otpForm.valueChanges
       .pipe(
         tap(() => {
@@ -170,13 +189,14 @@ export class AppComponent implements OnInit, AfterViewInit {
       .pipe(
         tap((val) => {
           const countOpt = this.coutdownInSendOtpComponent;
-          if (val >= 3 && countOpt > 0) {
+          if (val >= 5 && countOpt > 0) {
             this.text = 'Vui lòng nhập sau 60s';
             this.restart2$.next();
           }
         })
       )
       .subscribe();
+
     // this.count$
     //   .pipe(
     //     exhaustMap(() => {
@@ -206,14 +226,18 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   countafet60s$ = this.restart2$.pipe(
     switchMap(() => {
-      return timer(100, 1000).pipe(
-        map((i) => this.start2 - i),
-        take(this.start2 + 1),
-        finalize(() => {
-          this.start2 = 60;
-          this.countSubmit = 1;
-        })
-      );
+      // return timer(100, 1000).pipe(
+      //   map((i) => this.start2 - i),
+      //   take(this.start2 + 1),
+      //   finalize(() => {
+      //     this.start2 = 60;
+      //     this.countSubmit = 1;
+      //   })
+      // );
+      return this.commonCoundown(0, 1000, this.start2, () => {
+        this.start2 = 60;
+        this.countSubmit = 1;
+      });
     })
     // shareReplay()
   );
@@ -228,7 +252,9 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
   }
 
-  ngAfterViewInit(): void {}
+  ngAfterViewInit(): void {
+    // this.commonCoundown(0, 1000, 3600).subscribe(console.log);
+  }
 
   checkRegisterSuccess(data: any) {
     const validOtp = '123456';
@@ -243,8 +269,25 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   onOtpChange(countDown: Observable<number>) {
-    countDown.subscribe((val) => {
+    countDown.pipe(take(60 + 1)).subscribe((val) => {
       this.coutdownInSendOtpComponent = val;
     });
+  }
+
+  public commonCoundown(
+    startDue: number = 0,
+    intervalDuration: number = 1000,
+    time: number = 60,
+    callbackAfterStreamFinal: Function | null = null
+  ): Observable<number> {
+    return timer(startDue, intervalDuration).pipe(
+      map((i) => time - i),
+      take(time + 1),
+      finalize(callbackAfterStreamFinal?.())
+      // finalize(() => {
+      //   this.start2 = 60;
+      //   this.countSubmit = 1;
+      // }),
+    );
   }
 }
