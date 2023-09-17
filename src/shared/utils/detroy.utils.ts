@@ -1,14 +1,10 @@
-import { ChangeDetectorRef, ViewRef, inject } from '@angular/core';
 import { Subject } from 'rxjs';
+import { OnDestroy, Injectable } from '@angular/core';
 
-export const onDestroy = () => {
-  const detroy$ = new Subject<void>();
-  const viewRef = inject(ChangeDetectorRef) as ViewRef;
-
-  viewRef.onDestroy(() => {
-    detroy$.next();
-    detroy$.complete();
-  });
-
-  return detroy$;
-};
+@Injectable()
+export class Destroy extends Subject<void> implements OnDestroy {
+  ngOnDestroy(): void {
+    this.next();
+    this.complete();
+  }
+}

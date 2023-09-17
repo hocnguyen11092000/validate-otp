@@ -71,9 +71,10 @@ export class AppComponent implements OnInit, AfterViewInit {
   private readonly _ss = inject(SessionStorage);
   restart$ = new Subject<void>();
   restart2$ = new Subject<void>();
+  coutdownInSendOtpComponent: number = 10;
 
-  start = 10;
-  start2 = 10;
+  start = 60;
+  start2 = 60;
   countdonwn$ = this.restart$.pipe(
     startWith('init start'),
     switchMap(() => {
@@ -81,7 +82,7 @@ export class AppComponent implements OnInit, AfterViewInit {
         map((i) => this.start - i),
         take(this.start + 1),
         finalize(() => {
-          this.start = 10;
+          this.start = 60;
         })
       );
     })
@@ -167,24 +168,35 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     this.count$
       .pipe(
-        exhaustMap(() => {
-          return interval(1000).pipe(
-            take(60),
-            withLatestFrom(this.count$),
-            takeUntil(this.restart2$)
-          );
-        }),
-        tap(([timer, count]) => {
-          if (count >= 5) {
-            this.text = 'Vui lòng nhập sau 10s';
-            console.log('runnn');
-
-            // this.otpForm.disable();
+        tap((val) => {
+          const countOpt = this.coutdownInSendOtpComponent;
+          if (val >= 3 && countOpt > 0) {
+            this.text = 'Vui lòng nhập sau 60s';
             this.restart2$.next();
           }
         })
       )
       .subscribe();
+    // this.count$
+    //   .pipe(
+    //     exhaustMap(() => {
+    //       return interval(1000).pipe(
+    //         take(60),
+    //         withLatestFrom(this.count$),
+    //         takeUntil(this.restart2$)
+    //       );
+    //     }),
+    //     tap(([timer, count]) => {
+    //       if (count >= 5) {
+    //         this.text = 'Vui lòng nhập sau 10s';
+    //         console.log('runnn');
+
+    //         // this.otpForm.disable();
+    //         this.restart2$.next();
+    //       }
+    //     })
+    //   )
+    //   .subscribe();
   }
 
   text = '';
@@ -198,7 +210,7 @@ export class AppComponent implements OnInit, AfterViewInit {
         map((i) => this.start2 - i),
         take(this.start2 + 1),
         finalize(() => {
-          this.start2 = 10;
+          this.start2 = 60;
           this.countSubmit = 1;
         })
       );
@@ -228,5 +240,11 @@ export class AppComponent implements OnInit, AfterViewInit {
       this.count$.next(this.countSubmit++);
       this.errorSubmitResponse = 'error from submit response';
     }
+  }
+
+  onOtpChange(countDown: Observable<number>) {
+    countDown.subscribe((val) => {
+      this.coutdownInSendOtpComponent = val;
+    });
   }
 }

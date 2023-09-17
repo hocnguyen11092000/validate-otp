@@ -1,16 +1,16 @@
 <h2>hello world</h2>
 
-<form [formGroup]="coreForm" (ngSubmit)="submitCoreForm()">
-  <!-- <app-parent [form]="coreForm" [test]="true" [config]="config"></app-parent> -->
+<!-- <form [formGroup]="coreForm" (ngSubmit)="submitCoreForm()">
+  <app-parent [form]="coreForm" [test]="true" [config]="config"></app-parent>
 
   <button class="btn">Submit</button>
-</form>
+</form> -->
 
-<button class="btn" (click)="emitSubject()">emit</button>
+<!-- <button class="btn" (click)="emitSubject()">emit</button>
 <br />
 <button class="btn" (click)="setItem()">set item</button>
 <br />
-<button class="btn" (click)="getItem()">get item</button>
+<button class="btn" (click)="getItem()">get item</button> -->
 
 <ul class="list" style="display: flex; gap: 20px">
   <li routerLink="parent">parent</li>
@@ -48,6 +48,7 @@
       [disableBtn]="(isDisable$ | async)!"
       [(ngModel)]="optValue"
       formControlName="otp"
+      (onOtpChange)="onOtpChange($event)"
     >
       <!-- <ng-container
         errorTemp
@@ -84,10 +85,10 @@
   </button>
 </form>
 
-{{ otpForm.value | json }}
+<!-- {{ otpForm.value | json }}
 {{ otpForm.status | json }}
 {{ otpForm.touched | json }}
-{{ "form ng model " + optValue }}
+{{ "form ng model " + optValue }} -->
 <div class="timer-out">
   {{ text }}
 </div>

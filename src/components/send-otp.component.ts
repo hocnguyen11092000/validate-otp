@@ -3,7 +3,9 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  EventEmitter,
   Input,
+  Output,
   TemplateRef,
   ViewChild,
   forwardRef,
@@ -16,19 +18,20 @@ import {
   NG_VALUE_ACCESSOR,
   NgControl,
 } from '@angular/forms';
-import * as _ from 'lodash';
 import {
+  BehaviorSubject,
   Subject,
   finalize,
   map,
+  shareReplay,
   switchMap,
   take,
+  takeUntil,
   timer,
-  startWith,
-  BehaviorSubject,
 } from 'rxjs';
 import { StringTemplateOutlet } from 'src/directives/string-template.directive';
 import { ValidateOnBlurDirective } from 'src/directives/validate-on-blur.directive';
+import { Destroy } from 'src/shared/utils/detroy.utils';
 
 @Component({
   selector: 'app-send-otp',
@@ -85,6 +88,7 @@ import { ValidateOnBlurDirective } from 'src/directives/validate-on-blur.directi
       useExisting: forwardRef(() => SendOptcomponent),
       multi: true,
     },
+    Destroy,
   ],
   imports: [
     FormsModule,
@@ -95,7 +99,7 @@ import { ValidateOnBlurDirective } from 'src/directives/validate-on-blur.directi
 })
 export class SendOptcomponent implements ControlValueAccessor, AfterViewInit {
   private _disableBtnResend = true;
-  private _startDefault = 10;
+  private _startDefault = 60;
 
   //#region defaut register for custom control
   protected controlValue = '';
@@ -114,9 +118,11 @@ export class SendOptcomponent implements ControlValueAccessor, AfterViewInit {
   @Input() start: number = this._startDefault;
   @Input() errorTempl!: TemplateRef<unknown>;
   @Input() context!: AbstractControl;
+  @Output() onOtpChange = new EventEmitter();
 
   //#region inject service
   // private _ngControl = inject(NgControl);
+  destroy$ = inject(Destroy);
 
   constructor() {
     // this._ngControl.valueAccessor = this;
@@ -155,19 +161,18 @@ export class SendOptcomponent implements ControlValueAccessor, AfterViewInit {
         map((i) => this.start - i),
         take(this.start + 1),
         finalize(() => {
-          this.start = 10;
+          this.start = 60;
         })
       );
-    })
+    }),
+    takeUntil(this.destroy$),
+    shareReplay()
   );
   //#endregion handle input change
 
   resendOtp() {
-    this.countSendOtp.next(this.countSendOtp.getValue() + 1);
-
-    if (!(this.countSendOtp.getValue() > 3)) {
-      this.restart$.next();
-    }
+    this.restart$.next();
+    this.onOtpChange.emit(this.countdonwn$);
   }
 
   ngAfterViewInit(): void {
