@@ -136,39 +136,24 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   countSendOtp$ = new BehaviorSubject(0);
-  triggerIntervalOtp$ = new Subject<boolean>();
+  // triggerIntervalOtp$ = new Subject<boolean>();
 
   restart() {
-    this.countSendOtp$.next(this.countSendOtp$.getValue() + 1);
-
-    console.log(this.countSendOtp$.getValue());
-
-    if (this.countSendOtp$.getValue() >= 3) {
-      this.maxSendOtp = 'Vui lòng thử lại sau 60p';
-      this.triggerIntervalOtp$.next(true);
-    } else {
-      this.restart$.next();
-      this.maxSendOtp = '';
-    }
+    // this.countSendOtp$.next(this.countSendOtp$.getValue() + 1);
+    // console.log(this.countSendOtp$.getValue());
+    // if (this.countSendOtp$.getValue() >= 3) {
+    //   this.maxSendOtp = 'Vui lòng thử lại sau 60p';
+    //   // this.triggerIntervalOtp$.next(true);
+    // } else {
+    //   this.restart$.next();
+    //   this.maxSendOtp = '';
+    // }
   }
 
   isDisable$ = new Observable<boolean>();
 
   count$ = new Subject<number>();
   ngOnInit(): void {
-    this.triggerIntervalOtp$
-      .pipe(
-        exhaustMap(() => {
-          return this.commonCoundown(0, 1000, 30).pipe(
-            withLatestFrom(this.triggerIntervalOtp$),
-            finalize(() => {
-              console.log('final after send 3 times otp');
-            })
-          );
-        })
-      )
-      .subscribe(console.log);
-
     this.otpForm.valueChanges
       .pipe(
         tap(() => {

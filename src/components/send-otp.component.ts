@@ -10,6 +10,7 @@ import {
   ViewChild,
   forwardRef,
   inject,
+  OnInit,
 } from '@angular/core';
 import {
   AbstractControl,
@@ -31,6 +32,7 @@ import {
 } from 'rxjs';
 import { StringTemplateOutlet } from 'src/directives/string-template.directive';
 import { ValidateOnBlurDirective } from 'src/directives/validate-on-blur.directive';
+import { CommonUtils } from 'src/shared/utils/common.utils';
 import { Destroy } from 'src/shared/utils/detroy.utils';
 
 @Component({
@@ -63,8 +65,8 @@ import { Destroy } from 'src/shared/utils/detroy.utils';
         {{ countdonwn }}
       </ng-container>
       <ng-template #noCountTempl>
-        <ng-container *ngIf="countSendOtp.getValue() > 3; else resetTemp">
-          Vui lòng thử lại sao 60s
+        <ng-container *ngIf="(countSendOtp | async)! > 3; else resetTemp">
+          Vui lòng thử lại sao 60 phút
         </ng-container>
 
         <ng-template #resetTemp>
@@ -97,9 +99,11 @@ import { Destroy } from 'src/shared/utils/detroy.utils';
     ValidateOnBlurDirective,
   ],
 })
-export class SendOptcomponent implements ControlValueAccessor, AfterViewInit {
+export class SendOptcomponent
+  implements ControlValueAccessor, AfterViewInit, OnInit
+{
   private _disableBtnResend = true;
-  private _startDefault = 60;
+  private _startDefault = 5;
 
   //#region defaut register for custom control
   protected controlValue = '';
@@ -152,8 +156,11 @@ export class SendOptcomponent implements ControlValueAccessor, AfterViewInit {
   //#endregion default function for custom comtrol
 
   //#region handle input change
+  commonUtils = CommonUtils;
   restart$ = new Subject<void>();
   countSendOtp = new BehaviorSubject(0);
+  triggerCountdownSendOtp$ = new Subject<void>();
+
   countdonwn$ = this.restart$.pipe(
     // startWith('init start'),
     switchMap(() => {
@@ -161,7 +168,7 @@ export class SendOptcomponent implements ControlValueAccessor, AfterViewInit {
         map((i) => this.start - i),
         take(this.start + 1),
         finalize(() => {
-          this.start = 60;
+          this.start = 5;
         })
       );
     }),
@@ -177,10 +184,29 @@ export class SendOptcomponent implements ControlValueAccessor, AfterViewInit {
       this.restart$.next();
 
       this.onOtpChange.emit(this.countdonwn$);
+    } else {
+      this.triggerCountdownSendOtp$.next();
     }
   }
 
   ngAfterViewInit(): void {
-    console.log(this.errorTempl, this.context);
+    // console.log(this.errorTempl, this.context);
+  }
+
+  ngOnInit(): void {
+    this.triggerCountdownSendOtp$
+      .pipe(
+        switchMap(() => {
+          return this.commonUtils.commonCoundown(0, 1000, 3).pipe(
+            finalize(() => {
+              console.log('finalize');
+
+              this.countSendOtp.next(1);
+              console.log(this.countSendOtp.getValue());
+            })
+          );
+        })
+      )
+      .subscribe(console.log);
   }
 }
