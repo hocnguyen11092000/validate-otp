@@ -24,6 +24,12 @@ bootstrapApplication(AppComponent, {
         loadComponent: async () =>
           (await import('./components/child.component')).ChildComponent,
       },
+      {
+        path: 'register-success',
+        loadComponent: async () =>
+          (await import('./components/register-success.component'))
+            .RegisterSuccessComponent,
+      },
     ]),
   ],
 }).catch((err) => console.error(err));

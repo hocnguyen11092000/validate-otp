@@ -7,7 +7,8 @@ import {
   inject,
 } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import * as _ from 'lodash';
 import {
   BehaviorSubject,
   tap,
@@ -30,6 +31,9 @@ import {
   shareReplay,
   takeUntil,
   repeat,
+  skipWhile,
+  exhaustMap,
+  from,
 } from 'rxjs';
 import { ControlHelper } from 'src/components/control-helper.component';
 import { Parentcomponent } from 'src/components/parent.component';
@@ -56,6 +60,7 @@ import { TestService } from 'src/services/test.service';
 })
 export class AppComponent implements OnInit, AfterViewInit {
   private _fb = inject(FormBuilder);
+  private _router = inject(Router);
   readonly coreForm = this._fb.nonNullable.group({});
   readonly otpForm = this._fb.nonNullable.group({
     phone: ['', Validators.required, []],
@@ -68,6 +73,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   restart2$ = new Subject<void>();
 
   start = 10;
+  start2 = 10;
   countdonwn$ = this.restart$.pipe(
     startWith('init start'),
     switchMap(() => {
@@ -125,15 +131,32 @@ export class AppComponent implements OnInit, AfterViewInit {
     const a = this._ss.getItem('test');
   }
 
+  countSendOtp$ = new BehaviorSubject(0);
   restart() {
-    this.restart$.next();
+    this.countSendOtp$.next(this.countSendOtp$.getValue() + 1);
+
+    console.log(this.countSendOtp$.getValue());
+
+    if (this.countSendOtp$.getValue() >= 3) {
+      this.maxSendOtp = 'Vui lòng thử lại sau 60p';
+    } else {
+      this.restart$.next();
+      this.maxSendOtp = '';
+    }
   }
 
   isDisable$ = new Observable<boolean>();
 
   count$ = new Subject<number>();
-
   ngOnInit(): void {
+    this.otpForm.valueChanges
+      .pipe(
+        tap(() => {
+          this.errorSubmitResponse = '';
+        })
+      )
+      .subscribe();
+
     this.isDisable$ = this.otpForm.get('phone')!.statusChanges.pipe(
       // startWith(''),
       debounceTime(300),
@@ -144,51 +167,66 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     this.count$
       .pipe(
-        withLatestFrom(this.count2$),
-        tap(([number, timer]) => {
-          console.log(number, timer);
+        exhaustMap(() => {
+          return interval(1000).pipe(
+            take(60),
+            withLatestFrom(this.count$),
+            takeUntil(this.restart2$)
+          );
+        }),
+        tap(([timer, count]) => {
+          if (count >= 5) {
+            this.text = 'Vui lòng nhập sau 10s';
+            console.log('runnn');
 
-          if (+number > 5 && timer > 10) {
-            this.text = 'Vui lòng nhập lại sau 60 phút';
+            // this.otpForm.disable();
             this.restart2$.next();
-          } else {
-            this.text = '';
           }
         })
       )
-      .subscribe(console.log);
+      .subscribe();
   }
 
   text = '';
+  maxSendOtp = '';
 
-  count2$ = interval(1000).pipe(
-    skipUntil(this.count$),
-    takeUntil(this.restart2$)
-    //  repeat({ delay: () => this.count$ })
-  );
+  // count2$ = interval(1000).pipe(skipUntil(this.count$));
 
   countafet60s$ = this.restart2$.pipe(
     switchMap(() => {
       return timer(100, 1000).pipe(
-        map((i) => this.start - i),
-        take(this.start + 1),
+        map((i) => this.start2 - i),
+        take(this.start2 + 1),
         finalize(() => {
-          this.start = 10;
-          this.coutSubmit = 1;
+          this.start2 = 10;
+          this.countSubmit = 1;
         })
       );
-    }),
-    shareReplay()
+    })
+    // shareReplay()
   );
   timerOut = new Subject();
-  coutSubmit = 1;
+  countSubmit = 1;
+  errorSubmitResponse = '';
 
   submitOpt() {
     if (this.otpForm.valid) {
-      this.count$.next(this.coutSubmit++);
-      console.log(this.otpForm.getRawValue());
+      this.checkRegisterSuccess(this.otpForm.getRawValue());
+      // console.log(this.otpForm.getRawValue());
     }
   }
 
   ngAfterViewInit(): void {}
+
+  checkRegisterSuccess(data: any) {
+    const validOtp = '123456';
+    const submitOtp = _.get(data, 'otp');
+
+    if (validOtp === submitOtp) {
+      this._router.navigate(['register-success']);
+    } else {
+      this.count$.next(this.countSubmit++);
+      this.errorSubmitResponse = 'error from submit response';
+    }
+  }
 }

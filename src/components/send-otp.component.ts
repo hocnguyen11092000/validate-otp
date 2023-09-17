@@ -25,6 +25,7 @@ import {
   take,
   timer,
   startWith,
+  BehaviorSubject,
 } from 'rxjs';
 import { StringTemplateOutlet } from 'src/directives/string-template.directive';
 import { ValidateOnBlurDirective } from 'src/directives/validate-on-blur.directive';
@@ -59,14 +60,20 @@ import { ValidateOnBlurDirective } from 'src/directives/validate-on-blur.directi
         {{ countdonwn }}
       </ng-container>
       <ng-template #noCountTempl>
-        <button
-          [disabled]="!disableBtn"
-          (click)="resendOtp()"
-          type="button"
-          class="btn btn-primary"
-        >
-          Resend
-        </button>
+        <ng-container *ngIf="countSendOtp.getValue() > 3; else resetTemp">
+          Vui lòng thử lại sao 60s
+        </ng-container>
+
+        <ng-template #resetTemp>
+          <button
+            [disabled]="!disableBtn"
+            (click)="resendOtp()"
+            type="button"
+            class="btn btn-primary"
+          >
+            Resend
+          </button>
+        </ng-template>
       </ng-template>
     </div>
   `,
@@ -140,6 +147,7 @@ export class SendOptcomponent implements ControlValueAccessor, AfterViewInit {
 
   //#region handle input change
   restart$ = new Subject<void>();
+  countSendOtp = new BehaviorSubject(0);
   countdonwn$ = this.restart$.pipe(
     // startWith('init start'),
     switchMap(() => {
@@ -155,7 +163,11 @@ export class SendOptcomponent implements ControlValueAccessor, AfterViewInit {
   //#endregion handle input change
 
   resendOtp() {
-    this.restart$.next();
+    this.countSendOtp.next(this.countSendOtp.getValue() + 1);
+
+    if (!(this.countSendOtp.getValue() > 3)) {
+      this.restart$.next();
+    }
   }
 
   ngAfterViewInit(): void {

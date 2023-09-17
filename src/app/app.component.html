@@ -12,9 +12,10 @@
 <br />
 <button class="btn" (click)="getItem()">get item</button>
 
-<ul class="list">
+<ul class="list" style="display: flex; gap: 20px">
   <li routerLink="parent">parent</li>
   <li routerLink="child">child</li>
+  <li routerLink="register-success">success-page</li>
 </ul>
 
 <!-- <ng-container *ngIf="countdonwn$ | async as countdown; else temp">
@@ -91,4 +92,12 @@
   {{ text }}
 </div>
 
-<div class="timer-2">countafet60s$: {{ countafet60s$ | async }}</div>
+<div class="max-opt">
+  {{ maxSendOtp }}
+</div>
+
+<ng-container *ngIf="countafet60s$ | async as counterAfter">
+  <div class="timer-2">countafet60s$: {{ counterAfter }}</div>
+</ng-container>
+
+<div class="error-response">{{ errorSubmitResponse }}</div>
